@@ -46,7 +46,8 @@ export default function Home() {
         <h1 className="setupTitle">스크림 점수판 만들기</h1>
         <p className="setupDesc">
           생성하면 추측할 수 없는 전용 URL이 발급됩니다. 그 링크를 아는 사람만 점수판을 볼 수
-          있고, 관리(업로드·패널티)는 PIN을 아는 사람만 할 수 있어요.
+          있고, 관리(업로드·패널티)는 PIN을 아는 사람만 할 수 있어요. 생성 후에는 링크를 꼭
+          기억해 두세요. 링크를 잊어버리면 점수판을 다시 열 수 없어요.
         </p>
         <label className="label">스크림 이름</label>
         <input
