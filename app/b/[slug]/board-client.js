@@ -586,7 +586,7 @@ export default function BoardClient({ slug }) {
                     : "CSV를 여기로 드래그하거나 클릭해서 선택"}
                 </div>
                 <div className="dropSub">
-                  GameResult_.csv 그대로 업로드 — 팀별 점수는 한 번씩만 합산됩니다
+                  GameResult_.csv 그대로 업로드
                 </div>
                 <input
                   ref={fileRef}
@@ -659,7 +659,7 @@ export default function BoardClient({ slug }) {
         )}
 
         <footer className="footer">
-          팀은 닉네임 2명 이상 일치로 자동 식별됩니다 · 30초마다 자동으로 최신 기록을 불러옵니다
+          팀은 닉네임으로 자동 식별됩니다 · 30초마다 자동으로 최신 기록을 불러옵니다
         </footer>
       </div>
     </div>
