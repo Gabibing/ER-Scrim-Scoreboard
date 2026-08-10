@@ -9,6 +9,10 @@ export default function Home() {
   const [pin, setPin] = useState("");
   const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
+  const exampleTitle = new Intl.DateTimeFormat("ko-KR", {
+    month: "long",
+    day: "numeric",
+  }).format(new Date());
 
   const create = async () => {
     setErr(null);
@@ -48,7 +52,7 @@ export default function Home() {
         <input
           className="input"
           style={{ marginBottom: 16 }}
-          placeholder="예) 8월 2주차 저녁 스크림"
+          placeholder={`예) ${exampleTitle} 자율 스크림`}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
