@@ -293,6 +293,7 @@ export default function BoardClient({ slug }) {
   const standings = board ? computeStandings(board) : [];
 
   const buildDiscordText = () => {
+    const boardUrl = typeof window !== "undefined" ? window.location.href : "";
     const lines = [
       `🏆 **${board.title}** — ${rounds.length}라운드 기준`,
       "```",
@@ -301,9 +302,9 @@ export default function BoardClient({ slug }) {
         return `${medalFor(i)} ${s.team.name.padEnd(12)} ${s.total}점${pen}`;
       }),
       "```",
-      typeof window !== "undefined" ? window.location.href : "",
+      boardUrl ? `🔗 링크: [바로 보기](${boardUrl})` : "",
     ];
-    return lines.join("\n");
+    return lines.filter(Boolean).join("\n");
   };
 
   const copyForDiscord = async () => {
