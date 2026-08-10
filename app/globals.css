@@ -1,0 +1,188 @@
+:root {
+  --bg0: #0d141f;
+  --bg1: #111b29;
+  --panel: #141d2b;
+  --panel2: #16202e;
+  --field: #0e1622;
+  --line: #24344a;
+  --line2: #2b3a4e;
+  --ink: #e8edf4;
+  --ink2: #c6d2e1;
+  --mute: #8fa1b8;
+  --faint: #5b6b80;
+  --ghost: #3d4a5c;
+  --gold: #f5b841;
+  --teal: #57c7c0;
+  --red: #e2574c;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(180deg, var(--bg0) 0%, var(--bg1) 60%, var(--bg0) 100%);
+  color: var(--ink);
+  font-family: "Pretendard", -apple-system, "Malgun Gothic", sans-serif;
+}
+
+.page { padding: 32px 20px 64px; }
+.wrap { max-width: 960px; margin: 0 auto; }
+
+.eyebrow {
+  font-size: 11px; letter-spacing: 4px; color: var(--teal);
+  font-weight: 700; margin-bottom: 6px;
+}
+
+/* ── 헤더 ── */
+.header {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  flex-wrap: wrap; gap: 16px; margin-bottom: 20px;
+}
+.title { margin: 0; font-size: 30px; font-weight: 800; letter-spacing: -0.5px; }
+.subtitle { color: var(--mute); font-size: 13px; margin-top: 6px; }
+.headerBtns { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ── 버튼/입력 ── */
+button { font-family: inherit; cursor: pointer; }
+.ghostBtn {
+  background: transparent; color: var(--ink2); border: 1px solid var(--line2);
+  border-radius: 8px; padding: 8px 14px; font-size: 13px;
+}
+.primaryBtn {
+  background: var(--gold); color: #161616; border: none; border-radius: 8px;
+  padding: 12px; font-size: 15px; font-weight: 700; width: 100%;
+}
+.primarySmBtn {
+  background: var(--gold); color: #161616; border: none; border-radius: 8px;
+  padding: 9px 16px; font-size: 13px; font-weight: 700;
+}
+.ghostSmBtn {
+  background: transparent; color: var(--ink2); border: 1px solid var(--line2);
+  border-radius: 8px; padding: 8px 12px; font-size: 13px;
+}
+.input {
+  width: 100%; background: var(--field); color: var(--ink);
+  border: 1px solid var(--line2); border-radius: 8px; padding: 10px 12px;
+  font-size: 14px; font-family: inherit; outline: none;
+}
+.input:focus { border-color: var(--gold); }
+.label { display: block; font-size: 12px; color: var(--mute); margin-bottom: 6px; font-weight: 600; }
+
+/* ── 메시지 ── */
+.okMsg, .errMsg {
+  border-radius: 8px; padding: 9px 14px; font-size: 13px; margin-bottom: 14px;
+}
+.okMsg { background: rgba(87,199,192,.12); color: #7fd9d3; border: 1px solid rgba(87,199,192,.35); }
+.errMsg { background: rgba(226,87,76,.12); color: #f0958c; border: 1px solid rgba(226,87,76,.4); }
+
+/* ── 표 ── */
+.tableWrap {
+  overflow-x: auto; background: var(--panel);
+  border: 1px solid var(--line); border-radius: 14px;
+}
+table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 560px; }
+th {
+  padding: 13px 10px; font-size: 11px; letter-spacing: 1.2px; color: var(--mute);
+  border-bottom: 1px solid var(--line); text-align: center; font-weight: 700; white-space: nowrap;
+}
+td { padding: 13px 10px; text-align: center; white-space: nowrap; border-bottom: 1px solid #1c2938; }
+tr.clickable { cursor: pointer; }
+tr.rank0 { background: linear-gradient(90deg, rgba(245,184,65,.10), transparent 55%); }
+tr.rank1 { background: linear-gradient(90deg, rgba(200,210,225,.07), transparent 55%); }
+tr.rank2 { background: linear-gradient(90deg, rgba(205,127,50,.08), transparent 55%); }
+.empty { padding: 42px 20px; text-align: center; color: var(--faint); }
+.detail {
+  padding: 10px 16px 16px; background: #101927; font-size: 13px;
+  color: #a9b8ca; text-align: left; white-space: normal;
+}
+.detailLabel {
+  color: var(--teal); font-weight: 700; font-size: 11px;
+  letter-spacing: 1.5px; margin-right: 8px;
+}
+.penChip {
+  display: inline-block; background: rgba(226,87,76,.12);
+  border: 1px solid rgba(226,87,76,.35); color: #f0958c;
+  border-radius: 20px; padding: 3px 10px; font-size: 12px; margin: 4px 6px 0 0;
+}
+.tinyDel { background: none; border: none; color: var(--red); font-size: 13px; margin-left: 5px; padding: 0; }
+.tinyDelArmed {
+  background: var(--red); border: none; color: #fff; font-size: 11px;
+  margin-left: 5px; padding: 2px 7px; border-radius: 6px; font-weight: 700;
+}
+.tinyEdit { background: none; border: none; color: var(--teal); font-size: 12px; margin-left: 6px; padding: 0; }
+.inlineInput {
+  background: var(--field); color: var(--ink); border: 1px solid var(--gold);
+  border-radius: 8px; padding: 7px 10px; font-size: 13px; font-family: inherit;
+  outline: none; width: 140px;
+}
+
+/* ── 관리자 카드 ── */
+.adminWrap { display: grid; gap: 14px; margin-top: 22px; }
+.adminCard { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
+.adminTitle { margin: 0 0 14px; font-size: 15px; font-weight: 700; color: var(--gold); }
+.adminRow { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.hint { color: var(--faint); font-size: 12px; margin: 10px 0 0; }
+
+/* ── 드롭존 ── */
+.dropZone {
+  border: 2px dashed var(--line2); border-radius: 12px; padding: 28px 20px;
+  text-align: center; cursor: pointer; transition: all .15s ease; background: var(--field);
+}
+.dropZone.active { border-color: var(--gold); background: rgba(245,184,65,.06); }
+.dropIcon { font-size: 26px; margin-bottom: 8px; }
+.dropMain { font-size: 14px; font-weight: 600; color: var(--ink2); }
+.dropSub { font-size: 12px; color: var(--faint); margin-top: 6px; }
+
+/* ── 모달 ── */
+.modalOverlay {
+  position: fixed; inset: 0; background: rgba(8,12,18,.75); z-index: 50;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.modal {
+  background: var(--panel2); border: 1px solid var(--line); border-radius: 14px;
+  padding: 22px; width: 100%; max-width: 480px;
+}
+.copyArea {
+  width: 100%; height: 220px; background: var(--field); color: var(--ink);
+  border: 1px solid var(--line2); border-radius: 8px; padding: 12px;
+  font-size: 13px; font-family: "Pretendard", monospace; resize: vertical;
+  outline: none; white-space: pre; line-height: 1.5;
+}
+
+/* ── 홈(생성) ── */
+.setupWrap {
+  max-width: 440px; margin: 80px auto; background: var(--panel2);
+  border: 1px solid var(--line); border-radius: 16px; padding: 32px;
+}
+.setupTitle { margin: 0 0 10px; font-size: 24px; font-weight: 800; }
+.setupDesc { color: var(--mute); font-size: 13px; line-height: 1.6; margin-bottom: 24px; }
+
+.footer { margin-top: 28px; text-align: center; color: #42536a; font-size: 12px; }
+
+/* ── 리플레이 게임 ID ── */
+.gidChip {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--field); border: 1px solid var(--line2);
+  border-radius: 10px; padding: 7px 12px; font-size: 13px;
+}
+.gidChip.private { border-style: dashed; opacity: .85; }
+.gidChip b { color: var(--teal); font-size: 12px; }
+.gidCode {
+  background: none; border: none; color: var(--ink);
+  font-family: "Pretendard", monospace; font-size: 13px; letter-spacing: .5px;
+  padding: 0; text-decoration: underline dotted; text-underline-offset: 3px;
+}
+.gidCode:hover { color: var(--gold); }
+.gidToggle {
+  background: transparent; border: 1px solid var(--line2); color: var(--faint);
+  border-radius: 6px; padding: 3px 8px; font-size: 11px; font-weight: 700;
+}
+.gidToggle.on {
+  background: rgba(87,199,192,.15); border-color: rgba(87,199,192,.5); color: var(--teal);
+}
+.loading { text-align: center; padding-top: 120px; color: var(--mute); letter-spacing: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
