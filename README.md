@@ -94,3 +94,7 @@ UPSTASH_REDIS_REST_TOKEN=...
 npm install
 npm run dev
 ```
+
+## 라이선스
+
+MIT License — 자유롭게 사용·수정·배포할 수 있습니다. `LICENSE` 파일을 참고하세요.
