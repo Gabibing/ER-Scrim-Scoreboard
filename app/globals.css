@@ -542,7 +542,10 @@ tr.rank2 { background: linear-gradient(90deg, rgba(205,127,50,.08), transparent 
   position: absolute; inset: 0; z-index: 2; pointer-events: none;
   display: flex; align-items: center; justify-content: center; gap: 8px;
   padding: 0 14px;
+  /* 슬램 연출이 끝나면 서서히 사라지고 음영 처리된 팀명만 남는다 */
+  animation: obsTermFade .7s ease 2.2s forwards;
 }
+@keyframes obsTermFade { to { opacity: 0; visibility: hidden; } }
 .obsTermText {
   color: #ff5a4e; font-weight: 900; font-size: 11px; letter-spacing: 4px;
   text-shadow: 0 0 10px rgba(255,90,78,.8), 0 1px 2px rgba(0,0,0,.8);
