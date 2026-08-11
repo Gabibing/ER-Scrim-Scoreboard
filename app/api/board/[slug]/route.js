@@ -45,13 +45,14 @@ export async function GET(req, { params }) {
   const { slug } = await params;
   const board = await redis.get(boardKey(slug));
   if (!board) return Response.json({ error: "점수판을 찾을 수 없습니다." }, { status: 404 });
-  /* Vercel CDN 캐시: 같은 2초 안의 폴링(시청자·OBS 다수)은 엣지 캐시가 응답 →
-     함수 호출·Redis 명령이 시청자 수와 무관하게 줄어 무료 티어로도 대회 운영 가능 */
+  /* Vercel CDN 캐시: 같은 1초 안에 몰리는 폴링(시청자·OBS 다수)만 엣지 캐시가 흡수.
+     stale-while-revalidate는 오래된 응답을 먼저 반환해 체감 지연이 커지므로 쓰지 않는다 —
+     캐시 만료 후 첫 요청은 항상 최신 데이터를 받아 신선도 지연이 최대 1초로 고정된다. */
   return Response.json(
     { board: publicView(board) },
     {
       headers: {
-        "Cache-Control": "public, s-maxage=2, stale-while-revalidate=8",
+        "Cache-Control": "public, s-maxage=1",
       },
     }
   );
