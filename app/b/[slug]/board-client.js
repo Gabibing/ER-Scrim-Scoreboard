@@ -747,7 +747,10 @@ export default function BoardClient({ slug }) {
           </div>
         )}
 
-        {msg && <div className={msg.type === "ok" ? "okMsg" : "errMsg"}>{msg.text}</div>}
+        {/* 안내 메시지: 화면 아래 고정 토스트 — 레이아웃을 밀지 않는다 */}
+        {msg && (
+          <div className={`toast ${msg.type === "ok" ? "okMsg" : "errMsg"}`}>{msg.text}</div>
+        )}
 
         <div className="tableWrap">
           <table>

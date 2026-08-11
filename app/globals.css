@@ -593,3 +593,15 @@ tr.rank2 { background: linear-gradient(90deg, rgba(205,127,50,.08), transparent 
 }
 .liveGuide b { color: var(--ink2); }
 .guideStrong { color: var(--gold); font-weight: 800; }
+
+/* ── 하단 고정 토스트 (레이아웃 밀림 방지) ── */
+.toast {
+  position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%);
+  z-index: 80; margin: 0; max-width: min(92vw, 620px); width: max-content;
+  box-shadow: 0 10px 36px rgba(0, 0, 0, .55);
+  animation: toastIn .22s ease;
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translate(-50%, 10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
