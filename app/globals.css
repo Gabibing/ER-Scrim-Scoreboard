@@ -186,3 +186,407 @@ tr.rank2 { background: linear-gradient(90deg, rgba(205,127,50,.08), transparent 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+/* ── 실시간 라운드 ── */
+.liveDot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  background: #ff5a4e; margin-left: 6px; vertical-align: middle;
+  box-shadow: 0 0 6px rgba(255,90,78,.8);
+  animation: livePulse 1.4s ease-in-out infinite;
+}
+@keyframes livePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .35; }
+}
+.liveTh { color: #ff8a80 !important; }
+.liveCell { color: #ffb3ab; font-style: italic; }
+.liveNotice {
+  margin: 10px 2px 0; font-size: 12px; color: #ff9d94;
+  display: flex; align-items: center; gap: 2px;
+}
+.liveNotice .liveDot { margin: 0 6px 0 0; }
+.liveBadge {
+  margin-left: 10px; font-size: 12px; font-weight: 600; color: #ff9d94;
+  letter-spacing: 0;
+}
+.liveCard { border-color: rgba(255,90,78,.45); }
+.liveGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 8px; }
+.liveRow {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  background: var(--field); border: 1px solid var(--line);
+  border-radius: 10px; padding: 8px 10px;
+}
+.liveTeamName {
+  font-size: 13px; font-weight: 600; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+}
+.liveCtrls { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.stepBtn {
+  background: var(--panel2); color: var(--ink2); border: 1px solid var(--line2);
+  border-radius: 7px; padding: 6px 9px; font-size: 12px; font-weight: 700;
+}
+.stepBtn:hover { border-color: var(--gold); color: var(--gold); }
+.liveScoreInput { width: 62px !important; text-align: center; padding: 6px 4px !important; }
+.liveScoreInput::-webkit-outer-spin-button,
+.liveScoreInput::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.dangerSmBtn {
+  background: transparent; color: var(--red); border: 1px solid rgba(226,87,76,.5);
+  border-radius: 8px; padding: 8px 12px; font-size: 13px; font-weight: 700;
+}
+.dangerSmBtn.armed { background: var(--red); color: #fff; border-color: var(--red); }
+.manualMark {
+  color: var(--teal); font-size: 11px; margin-left: 4px; cursor: help;
+}
+
+/* ── OCR 모달 ── */
+.ocrModal { max-width: 620px; max-height: 88vh; overflow-y: auto; }
+.ocrPreview {
+  width: 100%; border-radius: 10px; border: 1px solid var(--line);
+  display: block; max-height: 180px; object-fit: cover; object-position: bottom;
+}
+.ocrProgress {
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  padding: 40px 10px; color: var(--mute); font-size: 13px; text-align: center;
+}
+.spinner {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 3px solid var(--line2); border-top-color: var(--gold);
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.ocrTableWrap { overflow-x: auto; margin-top: 10px; }
+.ocrTable { min-width: 0; width: 100%; }
+.ocrTable th { padding: 8px 6px; font-size: 10px; }
+.ocrTable td { padding: 6px; border-bottom: 1px solid #1c2938; }
+.ocrSkipped { opacity: .45; }
+
+/* ── OBS 오버레이 ── */
+.obsRoot {
+  transform-origin: top left; padding: 12px;
+  font-family: "Pretendard", -apple-system, "Malgun Gothic", sans-serif;
+}
+.obsPanel {
+  display: inline-block; min-width: 340px;
+  background: rgba(10, 16, 26, .88);
+  border: 1px solid rgba(245, 184, 65, .35);
+  border-radius: 14px; overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,.5);
+}
+.obsHeader {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 10px 16px 9px;
+  background: linear-gradient(180deg, rgba(245,184,65,.14), rgba(245,184,65,.03));
+  border-bottom: 1px solid rgba(245,184,65,.25);
+}
+.obsRoundInfo {
+  font-size: 14px; color: var(--gold); font-weight: 800; letter-spacing: 2px;
+  display: flex; align-items: center; gap: 10px;
+}
+.obsLive { color: #ff5a4e; animation: livePulse 1.4s ease-in-out infinite; }
+.obsRows { padding: 6px 0; }
+.obsRow {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 16px; font-size: 14px; color: var(--ink);
+}
+.obsRow:nth-child(even) { background: rgba(255,255,255,.03); }
+.obsRank {
+  width: 22px; text-align: center; font-weight: 800; font-size: 13px;
+  color: var(--mute); flex-shrink: 0;
+}
+.obsTop0 .obsRank { color: #f5b841; }
+.obsTop1 .obsRank { color: #c8d2e1; }
+.obsTop2 .obsRank { color: #cd7f32; }
+.obsTop0 { background: linear-gradient(90deg, rgba(245,184,65,.16), transparent 70%) !important; }
+.obsTop1 { background: linear-gradient(90deg, rgba(200,210,225,.10), transparent 70%) !important; }
+.obsTop2 { background: linear-gradient(90deg, rgba(205,127,50,.12), transparent 70%) !important; }
+.obsTeam {
+  flex: 1; font-weight: 700; overflow: hidden; white-space: nowrap;
+  text-overflow: ellipsis; min-width: 0;
+}
+.obsCell { width: 30px; text-align: center; font-size: 12px; color: var(--ink2); flex-shrink: 0; }
+.obsCellLive { color: #ffb3ab; font-style: italic; }
+.obsTotal {
+  width: 48px; text-align: right; font-weight: 800; font-size: 16px;
+  color: var(--gold); flex-shrink: 0; font-variant-numeric: tabular-nums;
+}
+.obsEmpty { padding: 20px; text-align: center; color: var(--mute); font-size: 13px; }
+
+/* ── 결과 그래픽 ── */
+.gfxPage {
+  min-height: 100vh; display: flex; flex-direction: column;
+  align-items: center; padding: 16px;
+}
+.gfxToolbar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-bottom: 14px; width: 100%; max-width: 1100px; justify-content: center;
+}
+.gfxStageWrap { position: relative; overflow: hidden; border-radius: 18px; }
+.gfxStage {
+  position: absolute; top: 0; left: 0; transform-origin: top left;
+  background:
+    radial-gradient(1000px 500px at 50% -10%, rgba(245,184,65,.14), transparent 60%),
+    radial-gradient(800px 400px at 85% 110%, rgba(87,199,192,.08), transparent 60%),
+    linear-gradient(180deg, #0b111c 0%, #101a29 55%, #0b111c 100%);
+  border: 1px solid var(--line); border-radius: 18px;
+  padding: 52px 70px 44px; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.gfxGlow {
+  position: absolute; top: -140px; left: 50%; transform: translateX(-50%);
+  width: 900px; height: 280px; border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(245,184,65,.18), transparent 70%);
+  pointer-events: none;
+}
+.gfxHeader { text-align: center; margin-bottom: 34px; position: relative; }
+.gfxEyebrow {
+  font-size: 14px; letter-spacing: 7px; color: var(--gold); font-weight: 800;
+  margin-bottom: 10px;
+}
+.gfxTitle {
+  margin: 0; font-size: 52px; font-weight: 900; letter-spacing: -1px; color: #fff;
+  text-shadow: 0 4px 24px rgba(0,0,0,.5);
+}
+.gfxMeta {
+  margin-top: 10px; font-size: 16px; color: var(--mute);
+  display: flex; justify-content: center; align-items: center; gap: 12px;
+}
+.gfxLiveTag {
+  font-size: 12px; font-weight: 800; color: #ff7a70;
+  border: 1px solid rgba(255,90,78,.5); border-radius: 20px; padding: 3px 12px;
+  letter-spacing: 1px;
+}
+.gfxPodium {
+  display: flex; justify-content: center; align-items: flex-end;
+  gap: 26px; margin-bottom: 34px;
+}
+.gfxCard {
+  width: 300px; border-radius: 16px; padding: 24px 26px 20px;
+  background: linear-gradient(180deg, #16202e, #121a27);
+  border: 1px solid var(--line2); text-align: center; position: relative;
+}
+.gfxPlace0 {
+  width: 340px; padding: 34px 28px 24px;
+  border-color: rgba(245,184,65,.65);
+  background: linear-gradient(180deg, rgba(245,184,65,.14), rgba(245,184,65,.03) 40%, #121a27);
+  box-shadow: 0 12px 48px rgba(245,184,65,.12);
+}
+.gfxPlace1 { border-color: rgba(200,210,225,.4); }
+.gfxPlace2 { border-color: rgba(205,127,50,.45); }
+.gfxPlaceNum {
+  font-size: 15px; font-weight: 900; letter-spacing: 4px; margin-bottom: 10px;
+}
+.gfxPlace0 .gfxPlaceNum { color: #f5b841; font-size: 18px; }
+.gfxPlace1 .gfxPlaceNum { color: #c8d2e1; }
+.gfxPlace2 .gfxPlaceNum { color: #cd7f32; }
+.gfxCardTeam {
+  font-size: 26px; font-weight: 800; color: #fff; letter-spacing: -.5px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gfxPlace0 .gfxCardTeam { font-size: 30px; }
+.gfxCardScore {
+  margin-top: 8px; font-size: 44px; font-weight: 900; color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+.gfxPlace0 .gfxCardScore { font-size: 54px; }
+.gfxPt { font-size: 16px; font-weight: 700; color: var(--mute); margin-left: 6px; }
+.gfxCardRounds {
+  margin-top: 10px; display: flex; justify-content: center; gap: 10px;
+  font-size: 13px; color: var(--ink2); font-variant-numeric: tabular-nums;
+}
+.gfxCardPen { margin-top: 8px; font-size: 12px; color: var(--red); font-weight: 700; }
+.gfxRLive { color: #ffb3ab !important; font-style: italic; }
+.gfxTable {
+  background: rgba(13, 20, 31, .7); border: 1px solid var(--line);
+  border-radius: 14px; overflow: hidden; font-variant-numeric: tabular-nums;
+}
+.gfxTableHead, .gfxTableRow {
+  display: flex; align-items: center; gap: 6px; padding: 10px 24px;
+}
+.gfxTableHead {
+  font-size: 11px; letter-spacing: 2px; color: var(--mute); font-weight: 800;
+  border-bottom: 1px solid var(--line); background: rgba(255,255,255,.02);
+}
+.gfxTableRow { font-size: 16px; border-bottom: 1px solid #17222f; }
+.gfxTableRow:last-child { border-bottom: none; }
+.gfxTableRow:nth-child(even) { background: rgba(255,255,255,.02); }
+.gfxColRank { width: 34px; font-weight: 800; color: var(--mute); flex-shrink: 0; }
+.gfxColTeam {
+  flex: 1; font-weight: 700; color: var(--ink); min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gfxColR { width: 46px; text-align: center; color: var(--ink2); flex-shrink: 0; }
+.gfxColPen { width: 86px; text-align: center; color: var(--red); flex-shrink: 0; }
+.gfxColTotal {
+  width: 136px; text-align: right; font-weight: 900; color: var(--gold);
+  font-size: 18px; flex-shrink: 0; white-space: nowrap;
+}
+/* 헤더 줄에서는 다른 열 제목과 같은 크기로 */
+.gfxTableHead .gfxColTotal { font-size: 11px; }
+.gfxEmpty {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  color: var(--faint); font-size: 18px;
+}
+
+/* ── OBS 순위 변동 애니메이션 ── */
+.obsRowsAnim { position: relative; margin: 6px 0; }
+.obsRowAbs {
+  position: absolute; left: 0; right: 0; padding: 0 16px;
+  transition: top .9s cubic-bezier(.25, .9, .3, 1.05), background .6s ease;
+  animation: obsRowIn .45s ease;
+  will-change: top;
+}
+.obsRowAbs:nth-child(even) { background: transparent; } /* nth-child 줄무늬 무효화(고정 DOM 순서) */
+.obsAlt { background: rgba(255,255,255,.03) !important; }
+.obsTop0.obsRowAbs { background: linear-gradient(90deg, rgba(245,184,65,.16), transparent 70%) !important; }
+.obsTop1.obsRowAbs { background: linear-gradient(90deg, rgba(200,210,225,.10), transparent 70%) !important; }
+.obsTop2.obsRowAbs { background: linear-gradient(90deg, rgba(205,127,50,.12), transparent 70%) !important; }
+.obsChanged { background: rgba(245,184,65,.10) !important; }
+@keyframes obsRowIn { from { opacity: 0; } to { opacity: 1; } }
+.obsMove {
+  width: 12px; flex-shrink: 0; text-align: center;
+  font-size: 10px; line-height: 1;
+  animation: obsMovePulse 1s ease-in-out infinite;
+}
+.obsMove.up { color: #57e0a0; }
+.obsMove.down { color: #ff6b61; }
+@keyframes obsMovePulse {
+  0%, 100% { opacity: 1; transform: translateY(0); }
+  50% { opacity: .5; transform: translateY(-1px); }
+}
+.obsMove.down { animation-name: obsMovePulseDown; }
+@keyframes obsMovePulseDown {
+  0%, 100% { opacity: 1; transform: translateY(0); }
+  50% { opacity: .5; transform: translateY(1px); }
+}
+.obsTotal.flash { animation: obsScoreFlash 1.2s ease 2; }
+@keyframes obsScoreFlash {
+  0%, 100% { color: var(--gold); text-shadow: none; }
+  50% { color: #ffe9b8; text-shadow: 0 0 12px rgba(245,184,65,.9); }
+}
+
+/* ── 점수 반영(송출) 버튼 ── */
+.pushBtn:disabled { opacity: .55; cursor: default; }
+.pushBtn.dirty { animation: pushGlow 1.3s ease-in-out infinite; }
+@keyframes pushGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245,184,65,.0); }
+  50% { box-shadow: 0 0 0 5px rgba(245,184,65,.25); }
+}
+.liveBadge.unsaved { color: var(--gold); }
+
+/* ── 점수표 내 팀 추가 행 ── */
+.addTeamRow td { padding: 10px; background: rgba(255,255,255,.015); }
+.addTeamInner { display: inline-flex; gap: 8px; align-items: center; }
+.addTeamInner .input { padding: 8px 10px; font-size: 13px; }
+
+/* ── 모드 선택 (홈) ── */
+.modePick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.modeCard {
+  background: var(--field); border: 1px solid var(--line2); border-radius: 12px;
+  padding: 14px; text-align: left; display: flex; flex-direction: column; gap: 6px;
+  color: var(--ink2); font-family: inherit;
+}
+.modeCard b { font-size: 15px; color: var(--ink); }
+.modeCard span { font-size: 12px; line-height: 1.5; color: var(--mute); }
+.modeCard.on { border-color: var(--gold); background: rgba(245,184,65,.07); }
+.modeCard.on b { color: var(--gold); }
+
+/* ── 팀 삭제 ── */
+.teamDelBtn { margin-left: 12px; padding: 4px 10px; font-size: 12px; }
+
+/* ── OCR 인식 실패 칸: 직접 입력 유도 ── */
+.ocrMissing td { background: rgba(245,184,65,.05); }
+.ocrMissTag {
+  margin-left: 8px; font-size: 11px; font-weight: 700; color: var(--gold);
+  border: 1px solid rgba(245,184,65,.5); border-radius: 12px; padding: 1px 8px;
+}
+.ocrNeedInput {
+  border-color: var(--gold) !important;
+  animation: ocrNeedPulse 1.4s ease-in-out infinite;
+}
+.ocrNeedInput::placeholder { color: rgba(245,184,65,.65); font-size: 12px; }
+@keyframes ocrNeedPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245,184,65,0); }
+  50% { box-shadow: 0 0 0 3px rgba(245,184,65,.2); }
+}
+
+/* ── 라운드 탈락(Terminate) ── */
+.skullBtn {
+  background: transparent; border: 1px solid var(--line2); border-radius: 7px;
+  padding: 5px 8px; font-size: 13px; line-height: 1; filter: grayscale(1) opacity(.55);
+}
+.skullBtn:hover { border-color: var(--red); filter: grayscale(.3) opacity(.9); }
+.skullBtn.on {
+  background: rgba(226,87,76,.15); border-color: rgba(226,87,76,.6);
+  filter: none;
+}
+.liveRow.dead { opacity: .55; }
+.liveRow.dead .liveTeamName { text-decoration: line-through; color: var(--mute); }
+
+/* OBS: 탈락(TERMINATED) 연출 — 도장 찍히듯 슬램 + 붉은 라인 확장 + 내용 음영 */
+.obsDead {
+  background: linear-gradient(90deg, rgba(226,87,76,.12), rgba(226,87,76,.03) 75%) !important;
+  animation: obsDeadFlash 1s ease;
+}
+.obsDead .obsRank,
+.obsDead .obsMove,
+.obsDead .obsTeam,
+.obsDead .obsCell,
+.obsDead .obsTotal {
+  opacity: .4; filter: grayscale(.9); transition: opacity .6s ease .4s;
+}
+@keyframes obsDeadFlash {
+  0% { background: rgba(226,87,76,.4); }
+  100% { }
+}
+.obsTermStamp {
+  position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 0 14px;
+}
+.obsTermText {
+  color: #ff5a4e; font-weight: 900; font-size: 11px; letter-spacing: 4px;
+  text-shadow: 0 0 10px rgba(255,90,78,.8), 0 1px 2px rgba(0,0,0,.8);
+  white-space: nowrap;
+  animation: obsTermSlam .55s cubic-bezier(.2, 1.3, .4, 1) backwards;
+}
+@keyframes obsTermSlam {
+  0% { transform: scale(2.6) rotate(-6deg); opacity: 0; }
+  55% { transform: scale(.92) rotate(0deg); opacity: 1; }
+  75% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+.obsTermLine {
+  height: 2px; flex: 1; max-width: 52px; border-radius: 2px;
+  animation: obsLineGrow .45s ease .3s backwards;
+}
+.obsTermLine.left {
+  background: linear-gradient(90deg, transparent, #ff5a4e);
+  transform-origin: right center;
+}
+.obsTermLine.right {
+  background: linear-gradient(90deg, #ff5a4e, transparent);
+  transform-origin: left center;
+}
+@keyframes obsLineGrow { from { transform: scaleX(0); } }
+
+/* 결과 그래픽: KS 표기 */
+.gfxCardKs { margin-top: 6px; font-size: 13px; letter-spacing: 2px; color: var(--mute); font-weight: 700; }
+.gfxCardKs b { color: var(--teal); font-size: 15px; margin-left: 4px; }
+.gfxColKs { width: 96px; text-align: center; color: var(--teal); flex-shrink: 0; font-weight: 700; }
+
+/* ── 라운드 확정(초록) 버튼 ── */
+.greenSmBtn {
+  background: transparent; color: #57e0a0; border: 1px solid rgba(87,224,160,.55);
+  border-radius: 8px; padding: 8px 12px; font-size: 13px; font-weight: 700;
+}
+.greenSmBtn:hover { background: rgba(87,224,160,.1); }
+.greenSmBtn.armed { background: #2ea86e; color: #06130c; border-color: #2ea86e; }
+
+/* ── 실시간 카드 안내문 (강조 박스) ── */
+.liveGuide {
+  margin: 12px 0 0; font-size: 12.5px; color: var(--mute); line-height: 1.7;
+  background: rgba(245,184,65,.06); border: 1px solid rgba(245,184,65,.28);
+  border-radius: 8px; padding: 10px 13px;
+}
+.liveGuide b { color: var(--ink2); }
+.guideStrong { color: var(--gold); font-weight: 800; }

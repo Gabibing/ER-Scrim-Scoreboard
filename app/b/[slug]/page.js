@@ -1,5 +1,5 @@
 import { redis, boardKey } from "@/lib/redis";
-import { computeStandings, medalFor } from "@/lib/score";
+import { computeStandings, medalFor, withLive } from "@/lib/score";
 import BoardClient from "./board-client";
 
 export const dynamic = "force-dynamic"; // 항상 최신 순위로 OG 생성
@@ -12,12 +12,14 @@ export async function generateMetadata({ params }) {
   } catch {}
   if (!board) return { title: "스크림 점수판" };
 
-  const standings = computeStandings(board);
+  const view = withLive(board);
+  const standings = computeStandings(view);
   const top = standings.slice(0, 5);
+  const liveTag = board.live ? " · 🔴 진행중" : "";
   const desc =
     top.length === 0
       ? "아직 집계된 라운드가 없습니다."
-      : `${board.rounds.length}라운드 기준 · ` +
+      : `${view.rounds.length}라운드 기준${liveTag} · ` +
         top.map((s, i) => `${medalFor(i)} ${s.team.name} ${s.total}점`).join("  ");
 
   const title = `🏆 ${board.title}`;

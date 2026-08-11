@@ -3,6 +3,25 @@ import { redis, boardKey } from "@/lib/redis";
 
 const sha = (s) => crypto.createHash("sha256").update(String(s)).digest("hex");
 
+/* 실시간 입력 상태 정리(서버 강제): 숫자만 허용 */
+const cleanLive = (live, teams) => {
+  if (!live || typeof live !== "object") return null;
+  const round = parseInt(live.round, 10);
+  if (!round || round < 1 || round > 99) return null;
+  const teamIds = new Set((teams || []).map((t) => t.id));
+  const byTeam = new Map();
+  for (const e of Array.isArray(live.entries) ? live.entries : []) {
+    if (!e || !teamIds.has(e.teamId)) continue;
+    const score = e.score === "" || e.score === null ? null : parseFloat(e.score);
+    byTeam.set(e.teamId, {
+      teamId: e.teamId,
+      score: score !== null && isFinite(score) ? score : null,
+      out: !!e.out, // 라운드 탈락(Terminate)
+    });
+  }
+  return { round, entries: [...byTeam.values()], updatedAt: Date.now() };
+};
+
 /* 일반 열람용: pinHash 제거 + 비공개 라운드의 gameId 제거 (서버 강제) */
 const publicView = (board) => {
   const { pinHash, ...rest } = board;
@@ -26,7 +45,16 @@ export async function GET(req, { params }) {
   const { slug } = await params;
   const board = await redis.get(boardKey(slug));
   if (!board) return Response.json({ error: "점수판을 찾을 수 없습니다." }, { status: 404 });
-  return Response.json({ board: publicView(board) });
+  /* Vercel CDN 캐시: 같은 2초 안의 폴링(시청자·OBS 다수)은 엣지 캐시가 응답 →
+     함수 호출·Redis 명령이 시청자 수와 무관하게 줄어 무료 티어로도 대회 운영 가능 */
+  return Response.json(
+    { board: publicView(board) },
+    {
+      headers: {
+        "Cache-Control": "public, s-maxage=2, stale-while-revalidate=8",
+      },
+    }
+  );
 }
 
 /* PIN 검증 → 성공 시 gameId 포함 전체 보드 반환 */
@@ -63,13 +91,25 @@ export async function PUT(req, { params }) {
     const prev = (existing.rounds || []).find((x) => x.round === r.round);
     return prev?.gameId ? { ...r, gameId: prev.gameId } : r;
   });
+  const mode = existing.mode === "tourney" ? "tourney" : "scrim"; // 클라이언트가 바꿀 수 없음
+  const teams = Array.isArray(incoming.teams) ? incoming.teams : existing.teams;
+  if (mode === "tourney" && teams.length > 8)
+    return Response.json({ error: "대회 점수판은 최대 8팀까지 등록할 수 있습니다." }, { status: 400 });
   const clean = {
     title: typeof incoming.title === "string" && incoming.title.trim() ? incoming.title.trim() : existing.title,
+    mode,
     pinHash: existing.pinHash, // 클라이언트가 바꿀 수 없음
     createdAt: existing.createdAt,
-    teams: Array.isArray(incoming.teams) ? incoming.teams : existing.teams,
+    teams,
     rounds: mergedRounds,
     penalties: Array.isArray(incoming.penalties) ? incoming.penalties : existing.penalties,
+    /* 실시간 점수는 대회 모드 전용 */
+    live:
+      mode !== "tourney"
+        ? null
+        : "live" in incoming
+        ? cleanLive(incoming.live, teams)
+        : (existing.live ?? null),
   };
   await redis.set(boardKey(slug), clean);
   return Response.json({ board: adminView(clean) });
