@@ -6,7 +6,7 @@
    - 순위가 바뀌면 행이 부드럽게 자리를 바꾸는 애니메이션 + ▲▼ 표시
    - 라운드 탈락(Terminate) 팀은 음영 처리
    - URL 옵션: ?rows=8 (표시 팀 수) &scale=1.2 (배율) &title=0 (ROUND 표시줄 숨김) &rounds=1 (라운드별 점수 표시) &poll=5 (갱신 주기 초)
-   권장 소스 크기: 380 × 400 (8팀, scale 1 기준 실측 364×378 + 여백.
+   권장 소스 크기: 320 × 400 (8팀, scale 1 기준 실측 304×378 + 여백.
    ?rounds=1이면 라운드당 +30px 폭, scale 값에 비례해 확대) */
 
 import { useState, useEffect, useRef } from "react";
@@ -117,7 +117,7 @@ export default function ObsClient({ slug }) {
       {view && (
         <div
           className="obsPanel"
-          style={{ minWidth: 340 + (opts.rounds ? rounds.length * 30 : 0) }}
+          style={{ minWidth: 280 + (opts.rounds ? rounds.length * 30 : 0) }}
         >
           {opts.title && (
             <div className="obsHeader">

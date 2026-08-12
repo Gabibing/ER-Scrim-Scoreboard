@@ -266,8 +266,8 @@ tr.rank2 { background: linear-gradient(90deg, rgba(205,127,50,.08), transparent 
   font-family: "Pretendard", -apple-system, "Malgun Gothic", sans-serif;
 }
 .obsPanel {
-  display: inline-block; min-width: 340px;
-  background: rgba(10, 16, 26, .88);
+  display: inline-block; min-width: 280px;
+  background: #0a101a; /* 완전 불투명 — 게임 화면이 비치지 않음 */
   border: 1px solid rgba(245, 184, 65, .35);
   border-radius: 14px; overflow: hidden;
   box-shadow: 0 8px 32px rgba(0,0,0,.5);
@@ -285,8 +285,8 @@ tr.rank2 { background: linear-gradient(90deg, rgba(205,127,50,.08), transparent 
 .obsLive { color: #ff5a4e; animation: livePulse 1.4s ease-in-out infinite; }
 .obsRows { padding: 6px 0; }
 .obsRow {
-  display: flex; align-items: center; gap: 10px;
-  padding: 7px 16px; font-size: 14px; color: var(--ink);
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 12px; font-size: 14px; color: var(--ink);
 }
 .obsRow:nth-child(even) { background: rgba(255,255,255,.03); }
 .obsRank {
@@ -430,7 +430,7 @@ tr.rank2 { background: linear-gradient(90deg, rgba(205,127,50,.08), transparent 
 /* ── OBS 순위 변동 애니메이션 ── */
 .obsRowsAnim { position: relative; margin: 6px 0; }
 .obsRowAbs {
-  position: absolute; left: 0; right: 0; padding: 0 16px;
+  position: absolute; left: 0; right: 0; padding: 0 12px;
   transition: top .9s cubic-bezier(.25, .9, .3, 1.05), background .6s ease;
   animation: obsRowIn .45s ease;
   will-change: top;
@@ -604,4 +604,37 @@ tr.rank2 { background: linear-gradient(90deg, rgba(205,127,50,.08), transparent 
 @keyframes toastIn {
   from { opacity: 0; transform: translate(-50%, 10px); }
   to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* ── 실시간 화면 인식 상태 ── */
+.capStatus {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  margin-top: 12px; padding: 9px 13px; font-size: 12.5px;
+  background: rgba(255, 90, 78, .06); border: 1px solid rgba(255, 90, 78, .3);
+  border-radius: 8px; color: var(--ink2);
+}
+.capState { font-weight: 700; color: #ff9d94; }
+.capLast { color: var(--mute); font-variant-numeric: tabular-nums; }
+.capAuto {
+  display: inline-flex; align-items: center; gap: 6px; color: var(--mute);
+  font-size: 12px; cursor: pointer; margin-left: auto;
+}
+.capAuto input { accent-color: var(--gold); }
+
+/* ── OCR 디버그 뷰 ── */
+.ocrDebug { margin-top: 12px; font-size: 12px; color: var(--mute); }
+.ocrDebug summary { cursor: pointer; color: var(--teal); font-weight: 600; }
+.ocrDebugRow {
+  display: flex; align-items: center; gap: 10px; margin-top: 8px;
+  background: var(--field); border: 1px solid var(--line); border-radius: 8px;
+  padding: 6px 10px;
+}
+.ocrDebugSlot { font-weight: 700; color: var(--ink2); width: 32px; flex-shrink: 0; }
+.ocrDebugRow img {
+  height: 34px; border-radius: 4px; border: 1px solid var(--line2);
+  background: #fff; flex-shrink: 0;
+}
+.ocrDebugRow code {
+  font-size: 11px; color: var(--mute); overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; min-width: 0;
 }

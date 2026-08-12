@@ -10,7 +10,7 @@ import {
   medalFor,
   withLive,
 } from "@/lib/score";
-import { ocrScoreboard } from "@/lib/ocr";
+import { ocrScoreboard, createTsWorker, readFrameScores, FRAME_RATIO_OK } from "@/lib/ocr";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 
@@ -123,7 +123,10 @@ export default function BoardClient({ slug }) {
     if (!liveUnsaved) setLiveDraft(board?.live ?? null);
   }, [board, liveUnsaved]);
 
-  /* 서버 저장: 성공 시 서버가 돌려준 최신 상태로 갱신 */
+  /* 서버 저장: 성공 시 서버가 돌려준 최신 상태로 갱신.
+     주의: 화면 인식 루프(captureTick)는 한 번만 생성되는 클로저라
+     persist를 직접 참조하면 로그인 전의 PIN(null)이 박제된다 —
+     반드시 persistRef를 통해 최신 인스턴스를 쓸 것. */
   const persist = async (next) => {
     const res = await fetch(`/api/board/${slug}`, {
       method: "PUT",
@@ -135,6 +138,8 @@ export default function BoardClient({ slug }) {
     setBoard(data.board);
     return data.board;
   };
+  const persistRef = useRef(persist);
+  persistRef.current = persist; // 매 렌더마다 최신 PIN을 가진 인스턴스로 갱신
 
   const tryLogin = async () => {
     const res = await fetch(`/api/board/${slug}`, {
@@ -171,14 +176,24 @@ export default function BoardClient({ slug }) {
     setLiveUnsaved(true);
   };
 
-  const startLive = (withTeams = true) => {
+  const startLive = async (withTeams = true) => {
     const round = Math.max(1, parseInt(liveRoundInput, 10) || 1);
     const entries = withTeams
-      ? (board.teams || []).map((t) => ({ teamId: t.id, score: 0 }))
+      ? (boardRef.current?.teams || []).map((t) => ({ teamId: t.id, score: 0 }))
       : [];
-    editLiveDraft({ round, entries });
+    const draft = { round, entries };
+    setLiveDraft(draft);
+    liveDraftRef.current = draft;
     setUploadRound(round);
-    flash("ok", `R${round} 집계를 시작했습니다. [점수 반영]을 눌러야 시청자·OBS에 표시됩니다.`);
+    /* 시작 즉시 서버에 반영 — 시청자·OBS에 "라운드 시작(LIVE)"이 바로 표시됨 */
+    try {
+      await persist({ ...boardRef.current, live: draft });
+      setLiveUnsaved(false);
+      flash("ok", `R${round} 집계 시작 — 시청자·OBS에 라운드 시작이 반영되었습니다.`);
+    } catch (e) {
+      setLiveUnsaved(true); // 반영 실패 시 [점수 반영]으로 재시도 가능
+      flash("err", `라운드 시작 반영 실패: ${e.message} — [점수 반영]으로 다시 시도하세요.`);
+    }
   };
 
   /* 시청자·OBS로 송출 (0.5 단위로 스냅해서 저장) */
@@ -230,6 +245,175 @@ export default function BoardClient({ slug }) {
         e.teamId === teamId ? { ...e, out: !e.out } : e
       ),
     });
+  };
+
+  /* ── 실시간 화면 인식 (게임 창 캡처 → 주기적 OCR → 자동 반영) ──
+     전부 브라우저 안에서 처리. 화면은 서버로 전송되지 않는다.
+     오인식 방어: 같은 값이 2프레임 연속으로 읽히고, 현재 점수보다 클 때만 반영
+     (라운드 중 TS는 감소하지 않으므로 낮은 값 오인식은 자동 무시). */
+  const [capture, setCapture] = useState(null); // {status, last:[..]|null, auto}
+  const liveDraftRef = useRef(null);
+  useEffect(() => {
+    liveDraftRef.current = liveDraft;
+  }, [liveDraft]);
+  const capRefs = useRef({});
+
+  const stopCapture = useCallback(() => {
+    const c = capRefs.current;
+    clearInterval(c.timer);
+    try {
+      c.stream?.getTracks().forEach((t) => t.stop());
+    } catch {}
+    try {
+      c.worker?.terminate();
+    } catch {}
+    if (c.video) c.video.srcObject = null;
+    capRefs.current = {};
+    setCapture(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => () => stopCapture(), [stopCapture]); // 페이지 이탈 시 정리
+
+  const captureTick = useCallback(async () => {
+    const c = capRefs.current;
+    if (!c.video || c.busy) return;
+    c.busy = true;
+    try {
+      const vw = c.video.videoWidth;
+      const vh = c.video.videoHeight;
+      if (!vw || !vh) return;
+      if (!FRAME_RATIO_OK(vw, vh)) {
+        setCapture((p) => p && { ...p, status: "⚠ 캡처된 화면이 16:9가 아닙니다 — 게임 창 전체를 선택해 주세요." });
+        return;
+      }
+      const grabFrame = () => {
+        const f = document.createElement("canvas");
+        f.width = vw;
+        f.height = vh;
+        f.getContext("2d").drawImage(c.video, 0, 0);
+        return f;
+      };
+      const draft = liveDraftRef.current;
+      if (!draft) return;
+      const teams = boardRef.current?.teams || [];
+      let entries = draft.entries.map((e) => ({ ...e }));
+      /* 슬롯별 현재 점수 — 프레임 판독에서 "변화 없음" 빠른 경로에 사용 */
+      const expected = teams.map((t) => {
+        const e = entries.find((x) => x.teamId === t.id);
+        const cur = parseFloat(e?.score);
+        return isFinite(cur) ? cur : null;
+      });
+      /* 인식된 값은 즉시 반영 — 검증 대기 없이 "일단 반영하고, 오인식은
+         다음 판독이 바로잡는" 방식. 프레임 안의 전처리 교차 확인이
+         1차 방어선 역할을 한다. */
+      const applyScores = async (scores) => {
+        const d = liveDraftRef.current;
+        if (!d) return;
+        const nextEntries = d.entries.map((e) => ({ ...e }));
+        let changed = false;
+        scores.forEach((v, i) => {
+          const team = teams[i];
+          if (!team || v === null) return; // 실패한 칸만 보류 — 나머지는 그대로 반영
+          let entry = nextEntries.find((e) => e.teamId === team.id);
+          if (!entry) {
+            entry = { teamId: team.id, score: 0 };
+            nextEntries.push(entry);
+          }
+          const cur = parseFloat(entry.score);
+          if (!isFinite(cur) || v !== cur) {
+            entry.score = v;
+            changed = true;
+          }
+        });
+        if (!changed) return;
+        const next = { ...d, entries: nextEntries };
+        if (c.auto) {
+          setLiveDraft(next);
+          liveDraftRef.current = next;
+          await persistRef.current({ ...boardRef.current, live: next });
+          setLiveUnsaved(false);
+        } else {
+          editLiveDraft(next);
+          liveDraftRef.current = next;
+        }
+      };
+      /* 1차 프레임: 읽히는 대로 즉시 반영 */
+      const a = await readFrameScores(c.worker, grabFrame(), vw, vh, expected);
+      await applyScores(a);
+      /* 실패한 칸만 시간차를 둔 2차 프레임으로 보충 (이펙트가 가린 순간 회피) */
+      const missing = [];
+      a.forEach((v, i) => {
+        if (teams[i] && v === null) missing.push(i);
+      });
+      let display = a;
+      if (missing.length > 0) {
+        await new Promise((r) => setTimeout(r, 700));
+        const b = await readFrameScores(c.worker, grabFrame(), vw, vh, expected, missing);
+        await applyScores(b);
+        display = a.map((v, i) => (v !== null ? v : b[i]));
+      }
+      setCapture((p) =>
+        p && {
+          ...p,
+          status:
+            `🔴 인식 중 · 캡처 ${vw}×${vh}` +
+            (vw < 1600 ? " ⚠ 해상도가 낮아요 — 게임 창을 키우거나 전체 화면을 공유하세요" : ""),
+          last: display,
+        }
+      );
+    } catch (e) {
+      setCapture((p) => p && { ...p, status: `⚠ ${e.message || "인식 오류"}` });
+    } finally {
+      capRefs.current.busy = false;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const startCapture = async () => {
+    if (capture) return;
+    try {
+      if (!navigator.mediaDevices?.getDisplayMedia)
+        throw new Error("이 브라우저는 화면 캡처를 지원하지 않습니다. (크롬/엣지 권장)");
+      if (!liveDraftRef.current) await startLive(true); // 라이브 초안이 없으면 자동 시작
+      setCapture({ status: "화면 선택 대기 중…", last: null, auto: true });
+      /* 캡처 해상도가 낮으면 글자가 뭉개져 인식률이 떨어진다 — 원본 해상도로 요청 */
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: {
+          width: { ideal: 3840 },
+          height: { ideal: 2160 },
+          frameRate: { ideal: 5 },
+        },
+        audio: false,
+      });
+      const video = document.createElement("video");
+      video.srcObject = stream;
+      video.muted = true;
+      await video.play();
+      setCapture((p) => p && { ...p, status: "OCR 엔진 준비 중…" });
+      const worker = await createTsWorker();
+      capRefs.current = {
+        stream,
+        video,
+        worker,
+        prev: {},
+        busy: false,
+        auto: true,
+        timer: setInterval(captureTick, 2000),
+      };
+      stream.getVideoTracks()[0].addEventListener("ended", stopCapture);
+      setCapture({ status: "🔴 인식 중", last: null, auto: true });
+      captureTick();
+      flash("ok", "실시간 화면 인식을 시작했습니다. 2초마다 TS를 읽어 점수 상승은 즉시 반영합니다.");
+    } catch (e) {
+      stopCapture();
+      if (e?.name !== "NotAllowedError") flash("err", e.message || "화면 캡처를 시작하지 못했습니다.");
+    }
+  };
+
+  const toggleCaptureAuto = () => {
+    capRefs.current.auto = !capRefs.current.auto;
+    setCapture((p) => p && { ...p, auto: capRefs.current.auto });
   };
 
   /* 이미 등록된 팀을 라이브 초안에 다시 넣기 (제외했던 팀 복귀용) */
@@ -670,7 +854,7 @@ export default function BoardClient({ slug }) {
   const copyObsUrl = () =>
     copyToClipboard(
       `${window.location.origin}/b/${slug}/obs`,
-      "OBS 브라우저 소스 URL이 복사되었습니다. 권장 크기 380×400 (8팀 기준), 배경은 투명입니다."
+      "OBS 브라우저 소스 URL이 복사되었습니다. 권장 크기 320×400 (8팀 기준), 배경은 투명입니다."
     );
 
   /* ── 렌더 ── */
@@ -1006,6 +1190,9 @@ export default function BoardClient({ slug }) {
                     <button className="ghostSmBtn" onClick={openOcr}>
                       📷 스크린샷으로 인식
                     </button>
+                    <button className="ghostSmBtn" onClick={startCapture}>
+                      🎥 실시간 화면 인식
+                    </button>
                   </div>
                   <p className="hint">
                     CSV가 나오기 전에도 관전 화면을 보며 점수를 직접 올리거나, 관전 화면
@@ -1086,6 +1273,11 @@ export default function BoardClient({ slug }) {
                       {liveSaving ? "반영 중…" : liveUnsaved ? "▶ 점수 반영" : "반영됨"}
                     </button>
                     <button className="ghostSmBtn" onClick={openOcr}>📷 스크린샷 인식</button>
+                    {capture ? (
+                      <button className="dangerSmBtn" onClick={stopCapture}>🎥 인식 중지</button>
+                    ) : (
+                      <button className="ghostSmBtn" onClick={startCapture}>🎥 실시간 화면 인식</button>
+                    )}
                     <button
                       className={pendingLiveAction === "finalize" ? "greenSmBtn armed" : "greenSmBtn"}
                       onClick={finalizeLive}
@@ -1099,12 +1291,35 @@ export default function BoardClient({ slug }) {
                       {pendingLiveAction === "cancel" ? "종료 확인!" : "저장 없이 종료"}
                     </button>
                   </div>
+                  {capture && (
+                    <div className="capStatus">
+                      <span className="capState">{capture.status}</span>
+                      {capture.last && (
+                        <span className="capLast">
+                          마지막 인식:{" "}
+                          {capture.last.map((v) => (v === null ? "–" : v)).join(" · ")}
+                        </span>
+                      )}
+                      <label className="capAuto">
+                        <input
+                          type="checkbox"
+                          checked={capture.auto}
+                          onChange={toggleCaptureAuto}
+                        />
+                        자동 반영 (끄면 [점수 반영]을 눌러야 송출)
+                      </label>
+                    </div>
+                  )}
                   <p className="liveGuide">
                     점수를 고친 뒤 <b>[점수 반영]</b>을 눌러야 시청자·OBS에 표시됩니다.
                     라운드가 끝나면{" "}
                     <span className="guideStrong">CSV를 업로드해 공식 기록으로 확정</span>
                     하세요 — 같은 라운드 번호의 실시간 점수는 CSV로 대체되며, KS(킬 점수)는
-                    CSV를 업로드해야만 집계됩니다.
+                    CSV를 업로드해야만 집계됩니다.{" "}
+                    <b>🎥 실시간 화면 인식</b>을 켜고 게임 창을 공유하면 2초마다 TS를 읽어
+                    자동으로 반영합니다 (화면은 서버로 전송되지 않음). 인식된 값은
+                    검증 대기 없이 즉시 반영되고, 오인식이 있어도 다음 판독이 곧바로
+                    바로잡습니다. 인식에 실패한 칸은 같은 주기 안에서 한 번 더 시도해요.
                   </p>
                 </>
               )}
@@ -1306,6 +1521,31 @@ export default function BoardClient({ slug }) {
                       </tbody>
                     </table>
                   </div>
+                  <details className="ocrDebug">
+                    <summary>🔍 인식 디버그 — 각 칸이 어떻게 잘리고 읽혔는지 보기</summary>
+                    <p className="hint" style={{ margin: "8px 0" }}>
+                      아래 이미지에 <b>TS 숫자 줄이 안 보이면 좌표 문제</b>, 보이는데 글자가
+                      깨져 있으면 <b>전처리 문제</b>입니다. 인식이 계속 실패하면 이 화면을
+                      캡처해서 공유해 주세요.
+                    </p>
+                    {ocrRows.map((r) => (
+                      <div key={r.slot} className="ocrDebugRow">
+                        <span className="ocrDebugSlot">{r.slot}번</span>
+                        {r.debug?.crop ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img src={r.debug.crop} alt={`${r.slot}번 칸 크롭`} />
+                        ) : (
+                          <span className="hint" style={{ margin: 0 }}>(크롭 없음)</span>
+                        )}
+                        <code>
+                          {r.debug?.raw
+                            ? `"${r.debug.raw.replace(/\n/g, " ⏎ ")}"`
+                            : "(읽힌 글자 없음)"}
+                          {r.debug?.threshold ? ` · 임계값 ${r.debug.threshold}` : ""}
+                        </code>
+                      </div>
+                    ))}
+                  </details>
                   <div className="adminRow" style={{ marginTop: 14 }}>
                     <button className="primarySmBtn" onClick={applyOcr}>
                       초안에 넣기
